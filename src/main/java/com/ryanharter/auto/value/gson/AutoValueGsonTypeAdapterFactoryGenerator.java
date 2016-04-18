@@ -1,15 +1,14 @@
 package com.ryanharter.auto.value.gson;
 
-import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
+import com.google.gson.reflect.TypeToken;
 import com.squareup.javapoet.*;
 
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Set;
 
 /**
@@ -38,7 +37,7 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
      */
     void generate() throws IOException {
 
-        TypeName generic = TypeVariableName.get("T");
+        TypeVariableName generic = TypeVariableName.get("T");
         TypeName typeToken = ParameterizedTypeName.get(ClassName.get(TypeToken.class), generic);
         TypeName typeAdapter = ParameterizedTypeName.get(ClassName.get(TypeAdapter.class), generic);
 
@@ -46,27 +45,30 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
                 .addStatement("Class<? super $L> rawType = type.getRawType()", generic);
 
         boolean first = true;
-        for (Class processClass : classSet){
-            if(first){
+        for (Class processClass : classSet) {
+            if (first) {
                 codeBlock.beginControlFlow(TYPE_CONDITION, processClass);
                 first = false;
             } else {
                 codeBlock.nextControlFlow("else " + TYPE_CONDITION, processClass);
             }
-            codeBlock.addStatement("return (TypeAdapter<$L>) new $T.typeAdapter(gson)", generic, processClass);
+            // TODO this solution does not cover nested classes
+            codeBlock.addStatement("return (TypeAdapter<$L>) new AutoValue_$T.GsonTypeAdapter(gson)", generic, processClass);
         }
         codeBlock.endControlFlow();
         codeBlock.addStatement("return null");
 
         MethodSpec.Builder factoryMethodBuilder = MethodSpec.methodBuilder("create")
                 .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addTypeVariable(generic)
                 .addParameter(Gson.class, "gson")
                 .addParameter(typeToken, "type")
                 .addCode(codeBlock.build())
                 .returns(typeAdapter);
 
         TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(FILE_NAME)
-                .superclass(TypeAdapterFactory.class)
+                .addSuperinterface(TypeAdapterFactory.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addMethod(factoryMethodBuilder.build());
 

@@ -4,8 +4,6 @@ import com.ryanharter.auto.value.gson.processor.Cat;
 import com.ryanharter.auto.value.gson.processor.Dog;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 public class AutoValueGsonTypeAdapterFactoryGeneratorTest {
 
     @Test
@@ -22,4 +20,5 @@ public class AutoValueGsonTypeAdapterFactoryGeneratorTest {
         // Then
         // TODO check output
     }
+
 }
