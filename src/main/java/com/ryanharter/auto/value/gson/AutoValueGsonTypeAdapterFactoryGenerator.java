@@ -8,14 +8,12 @@ import com.squareup.javapoet.*;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Generates java file
@@ -25,21 +23,21 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
     private static final String FILE_NAME = "AutoValueGsonTypeAdapterFactory";
     private static final String TYPE_CONDITION = "if(rawType.equals($T.class))";
 
-    private final Set<TypeElement> typeElements = new LinkedHashSet<>();
+    private final HashMap<TypeElement, String> typeElements = new HashMap<>();
 
-    void add(TypeElement typeElement) {
-        typeElements.add(typeElement);
+    void add(TypeElement typeElement, String methodName) {
+        typeElements.put(typeElement, methodName);
     }
 
     /**
      * Builds source file
      *
-     * @param filer
+     * @param filer to figure out file destination location
      * @throws IOException
      */
     void generate(Filer filer) throws IOException {
 
-        if(typeElements.size() == 0){
+        if (typeElements.size() == 0) {
             return; // Don't generate for sake of it
         }
 
@@ -51,18 +49,18 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
                 .addStatement("Class<? super $L> rawType = type.getRawType()", generic);
 
         boolean first = true;
-        for (TypeElement typeElement : typeElements) {
+        for (Map.Entry<TypeElement, String> entry : typeElements.entrySet()) {
             if (first) {
-                codeBlock.beginControlFlow(TYPE_CONDITION, typeElement);
+                codeBlock.beginControlFlow(TYPE_CONDITION, entry.getKey());
                 first = false;
             } else {
-                codeBlock.nextControlFlow("else " + TYPE_CONDITION, typeElement);
+                codeBlock.nextControlFlow("else " + TYPE_CONDITION, entry.getKey());
             }
 
             // TODO find static methods with param Gson and return type TypeAdapter
             //typeElement.getClass().getMe
 
-            codeBlock.addStatement("return (TypeAdapter<$L>) new $T.methodName(gson)", generic, typeElement);
+            codeBlock.addStatement("return (TypeAdapter<$L>) $T.$L(gson)", generic, entry.getKey(), entry.getValue());
         }
         if (!first) {
             codeBlock.endControlFlow();
@@ -84,9 +82,9 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
                 .addMethod(factoryMethodBuilder.build());
 
         JavaFile javaFile = JavaFile.builder("", typeSpecBuilder.build())
+                .indent("    ")
                 .addFileComment("Auto-generated do not modify !")
                 .build();
-
 
 
         JavaFileObject file = filer.createSourceFile(FILE_NAME);

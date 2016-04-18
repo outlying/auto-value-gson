@@ -6,10 +6,10 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
+import javax.tools.Diagnostic;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -37,26 +37,36 @@ public class AutoValueGsonAnnotationProcessor extends AbstractProcessor {
 
         for (Element element : roundEnv.getElementsAnnotatedWith(AutoValue.class)) {
             if (element.getKind() == ElementKind.CLASS) {
-
-                // Validate class, we need class A with public static method:
-                // TypeAdapter<A> someName(Gson gson)
-
-                TypeElement typeElement = (TypeElement) element;
-
-                generator.add(typeElement);
-
+                for (Element subElement : element.getEnclosedElements()) {
+                    if (isElementValid(subElement)) {
+                        ExecutableElement executableElement = (ExecutableElement) subElement;
+                        if (isExecutableElementValid(executableElement)) {
+                            generator.add((TypeElement) element, executableElement.getSimpleName().toString());
+                        }
+                    }
+                }
             }
         }
 
         try {
             generator.generate(processingEnv.getFiler());
         } catch (IOException e) {
-            e.printStackTrace();
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Unable to generate output file");
         }
 
         return true;
     }
 
+    private boolean isExecutableElementValid(ExecutableElement executableElement) {
+        return !executableElement.getParameters().isEmpty() &&
+                executableElement.getParameters().get(0).asType().toString().equals("com.google.gson.Gson");
+        // TODO missing return parameter check, would be better to check that
+    }
+
+    private boolean isElementValid(Element subElement) {
+        return subElement.getKind() == ElementKind.METHOD &&
+                subElement.getModifiers().containsAll(Arrays.asList(Modifier.STATIC, Modifier.PUBLIC));
+    }
 
 
     @Override
