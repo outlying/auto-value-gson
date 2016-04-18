@@ -6,11 +6,14 @@ import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.javapoet.*;
 
+import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
+import javax.tools.JavaFileObject;
 import java.io.File;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -27,16 +30,23 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
 
     void add(TypeElement typeElement) {
         typeElements.add(typeElement);
-
         filePackage = typeElement.getEnclosingElement().toString();
     }
 
     /**
      * Builds source file
      *
+     * @param filer
      * @throws IOException
      */
-    void generate() throws IOException {
+    void generate(Filer filer) throws IOException {
+
+        if(typeElements.size() == 0){
+            return; // Don't generate for sake of it
+        }
+
+        JavaFileObject file = filer.createSourceFile(FILE_NAME);
+        Writer writer = file.openWriter();
 
         TypeVariableName generic = TypeVariableName.get("T");
         TypeName typeToken = ParameterizedTypeName.get(ClassName.get(TypeToken.class), generic);
@@ -59,7 +69,7 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
 
             codeBlock.addStatement("return (TypeAdapter<$L>) new $T.methodName(gson)", generic, typeElement);
         }
-        if(!first){
+        if (!first) {
             codeBlock.endControlFlow();
         }
         codeBlock.addStatement("return null");
@@ -78,12 +88,10 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addMethod(factoryMethodBuilder.build());
 
-        JavaFile javaFile = JavaFile.builder(filePackage + "", typeSpecBuilder.build())
+        JavaFile javaFile = JavaFile.builder("", typeSpecBuilder.build())
                 .addFileComment("Auto-generated do not modify !")
                 .build();
 
-
-        //javaFile.writeTo(System.out); // TODO change destination
-        javaFile.writeTo(new File("."));
+        javaFile.writeTo(writer);
     }
 }

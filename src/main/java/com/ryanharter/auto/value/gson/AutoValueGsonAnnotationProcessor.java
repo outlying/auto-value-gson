@@ -49,7 +49,7 @@ public class AutoValueGsonAnnotationProcessor extends AbstractProcessor {
         }
 
         try {
-            generator.generate();
+            generator.generate(processingEnv.getFiler());
         } catch (IOException e) {
             e.printStackTrace();
         }
