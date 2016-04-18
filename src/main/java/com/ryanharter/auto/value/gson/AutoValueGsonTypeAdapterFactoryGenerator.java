@@ -26,11 +26,9 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
     private static final String TYPE_CONDITION = "if(rawType.equals($T.class))";
 
     private final Set<TypeElement> typeElements = new LinkedHashSet<>();
-    private String filePackage;
 
     void add(TypeElement typeElement) {
         typeElements.add(typeElement);
-        filePackage = typeElement.getEnclosingElement().toString();
     }
 
     /**
@@ -44,9 +42,6 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
         if(typeElements.size() == 0){
             return; // Don't generate for sake of it
         }
-
-        JavaFileObject file = filer.createSourceFile(FILE_NAME);
-        Writer writer = file.openWriter();
 
         TypeVariableName generic = TypeVariableName.get("T");
         TypeName typeToken = ParameterizedTypeName.get(ClassName.get(TypeToken.class), generic);
@@ -92,6 +87,13 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
                 .addFileComment("Auto-generated do not modify !")
                 .build();
 
+
+
+        JavaFileObject file = filer.createSourceFile(FILE_NAME);
+        Writer writer = file.openWriter();
+
         javaFile.writeTo(writer);
+
+        writer.close();
     }
 }
