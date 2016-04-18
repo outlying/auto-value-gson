@@ -9,6 +9,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,8 +47,17 @@ public class AutoValueGsonAnnotationProcessor extends AbstractProcessor {
 
             }
         }
+
+        try {
+            generator.generate();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         return true;
     }
+
+
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {

@@ -10,6 +10,7 @@ public abstract class Cat {
     abstract String getName();
 
     public static TypeAdapter<Cat> makeMeOne(Gson gson){
+
         return new AutoValue_Cat.GsonTypeAdapter(gson);
     }
 }

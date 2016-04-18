@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken;
 import com.squareup.javapoet.*;
 
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import java.io.File;
 import java.io.IOException;
@@ -22,9 +23,12 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
     private static final String TYPE_CONDITION = "if(rawType.equals($T.class))";
 
     private final Set<TypeElement> typeElements = new LinkedHashSet<>();
+    private String filePackage;
 
     void add(TypeElement typeElement) {
         typeElements.add(typeElement);
+
+        filePackage = typeElement.getEnclosingElement().toString();
     }
 
     /**
@@ -74,9 +78,10 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addMethod(factoryMethodBuilder.build());
 
-        JavaFile javaFile = JavaFile.builder("", typeSpecBuilder.build())
+        JavaFile javaFile = JavaFile.builder(filePackage + "", typeSpecBuilder.build())
                 .addFileComment("Auto-generated do not modify !")
                 .build();
+
 
         //javaFile.writeTo(System.out); // TODO change destination
         javaFile.writeTo(new File("."));
