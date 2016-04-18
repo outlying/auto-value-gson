@@ -7,27 +7,24 @@ import com.google.gson.reflect.TypeToken;
 import com.squareup.javapoet.*;
 
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Generates AutoValueGsonTypeAdapterFactory.java file
+ * Generates java file
  */
 class AutoValueGsonTypeAdapterFactoryGenerator {
 
     private static final String FILE_NAME = "AutoValueGsonTypeAdapterFactory";
     private static final String TYPE_CONDITION = "if(rawType.equals($T.class))";
 
-    private final Set<Class> classSet = new HashSet<>();
+    private final Set<TypeElement> typeElements = new LinkedHashSet<>();
 
-    /**
-     * Add class for type factory
-     *
-     * @param aClass any class
-     */
-    void add(Class aClass) {
-        classSet.add(aClass);
+    void add(TypeElement typeElement) {
+        typeElements.add(typeElement);
     }
 
     /**
@@ -45,17 +42,22 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
                 .addStatement("Class<? super $L> rawType = type.getRawType()", generic);
 
         boolean first = true;
-        for (Class processClass : classSet) {
+        for (TypeElement typeElement : typeElements) {
             if (first) {
-                codeBlock.beginControlFlow(TYPE_CONDITION, processClass);
+                codeBlock.beginControlFlow(TYPE_CONDITION, typeElement);
                 first = false;
             } else {
-                codeBlock.nextControlFlow("else " + TYPE_CONDITION, processClass);
+                codeBlock.nextControlFlow("else " + TYPE_CONDITION, typeElement);
             }
-            // TODO this solution does not cover nested classes
-            codeBlock.addStatement("return (TypeAdapter<$L>) new AutoValue_$T.GsonTypeAdapter(gson)", generic, processClass);
+
+            // TODO find static methods with param Gson and return type TypeAdapter
+            //typeElement.getClass().getMe
+
+            codeBlock.addStatement("return (TypeAdapter<$L>) new $T.methodName(gson)", generic, typeElement);
         }
-        codeBlock.endControlFlow();
+        if(!first){
+            codeBlock.endControlFlow();
+        }
         codeBlock.addStatement("return null");
 
         MethodSpec.Builder factoryMethodBuilder = MethodSpec.methodBuilder("create")
@@ -76,6 +78,7 @@ class AutoValueGsonTypeAdapterFactoryGenerator {
                 .addFileComment("Auto-generated do not modify !")
                 .build();
 
-        javaFile.writeTo(System.out); // TODO change destination
+        //javaFile.writeTo(System.out); // TODO change destination
+        javaFile.writeTo(new File("."));
     }
 }

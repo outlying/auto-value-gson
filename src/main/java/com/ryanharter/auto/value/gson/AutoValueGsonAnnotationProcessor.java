@@ -32,13 +32,17 @@ public class AutoValueGsonAnnotationProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
-
+        AutoValueGsonTypeAdapterFactoryGenerator generator = new AutoValueGsonTypeAdapterFactoryGenerator();
 
         for (Element element : roundEnv.getElementsAnnotatedWith(AutoValue.class)) {
             if (element.getKind() == ElementKind.CLASS) {
 
                 // Validate class, we need class A with public static method:
                 // TypeAdapter<A> someName(Gson gson)
+
+                TypeElement typeElement = (TypeElement) element;
+
+                generator.add(typeElement);
 
             }
         }

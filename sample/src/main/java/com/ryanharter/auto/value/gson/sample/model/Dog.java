@@ -13,7 +13,7 @@ public abstract class Dog {
         return null;
     }
 
-    public static TypeAdapter<Dog> typeAdapter(Gson gson) {
+    public static TypeAdapter<Dog> randomNameToFind(Gson gson) {
         return new AutoValue_Dog.GsonTypeAdapter(gson);
     }
 }
