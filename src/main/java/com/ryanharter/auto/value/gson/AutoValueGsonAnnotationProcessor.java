@@ -3,8 +3,11 @@ package com.ryanharter.auto.value.gson;
 import com.google.auto.value.AutoValue;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import java.util.Collections;
 import java.util.HashSet;
@@ -22,8 +25,24 @@ public class AutoValueGsonAnnotationProcessor extends AbstractProcessor {
     }
 
     @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+        super.init(processingEnv);
+    }
+
+    @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        return false;
+
+
+
+        for (Element element : roundEnv.getElementsAnnotatedWith(AutoValue.class)) {
+            if (element.getKind() == ElementKind.CLASS) {
+
+                // Validate class, we need class A with public static method:
+                // TypeAdapter<A> someName(Gson gson)
+
+            }
+        }
+        return true;
     }
 
     @Override
